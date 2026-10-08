@@ -1,16 +1,3 @@
-// system_state.rs
-//
-// Represents the server's per-room system state as a single u32 bitfield.
-//
-// Bit layout (32 bits total):
-//   bit  0        : is_active            (1 = room is running)
-//   bit  1        : is_full              (1 = room at capacity)
-//   bit  2        : is_private           (1 = invite-only room)
-//   bit  3        : endianness flag      (0 = little-endian, 1 = big-endian)
-//   bits 4-11     : group_id             (8 bits, 0-255)
-//   bits 12-27    : capacity_limit       (16 bits, 0-65535)
-//   bits 28-31    : status_code          (4 bits, 0-15)
-
 const BIT_IS_ACTIVE: u32 = 0;
 const BIT_IS_FULL: u32 = 1;
 const BIT_IS_PRIVATE: u32 = 2;
@@ -42,8 +29,6 @@ fn is_private(state: u32) -> bool {
     get_flag(state, BIT_IS_PRIVATE)
 }
 
-/// Reads the designated endianness bit.
-/// false = little-endian, true = big-endian.
 fn is_big_endian(state: u32) -> bool {
     get_flag(state, BIT_ENDIANNESS)
 }
@@ -56,14 +41,10 @@ fn get_status_code(state: u32) -> u8 {
     ((state >> STATUS_SHIFT) & STATUS_MASK) as u8
 }
 
-/// Extracts the raw capacity_limit field, with no endian conversion applied.
 fn get_capacity_raw(state: u32) -> u16 {
     ((state >> CAPACITY_SHIFT) & CAPACITY_MASK) as u16
 }
 
-/// Extracts capacity_limit, THEN reads the endianness bit (bit 3) to decide
-/// the output byte format: if the endian bit is set, the value is converted
-/// to big-endian before being returned; otherwise it's returned natively.
 fn get_capacity(state: u32) -> u16 {
     let raw = get_capacity_raw(state);
     if is_big_endian(state) {
@@ -73,8 +54,6 @@ fn get_capacity(state: u32) -> u16 {
     }
 }
 
-/// Helper to pack individual fields into a single state word (for building
-/// test values below — not one of the four required "extractor" functions).
 fn build_state(active: bool, full: bool, private: bool, big_endian: bool,
                 group_id: u8, capacity: u16, status: u8) -> u32 {
     let mut state: u32 = 0;
